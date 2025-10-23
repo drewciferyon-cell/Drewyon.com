@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drew Yon — Personal Site</title>
+  <meta name="description" content="The personal site of Drew Yon.">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="locked">
+  <!-- Full-bleed hero poster -->
+  <section class="hero" style="--hero:url('assets/hero-original.jpg')">
+    <div class="hero-inner">
+      <h1>Drew Yon</h1>
+      <p class="muted">Personal site • under construction</p>
+      <a class="cta" href="#access">Enter</a>
+    </div>
+  </section>
+
+  <!-- Access card (hero stays visible) -->
+  <section id="access" class="card access-card">
+    <h2>Private Access</h2>
+    <p class="muted">Enter the password to view the site.</p>
+    <label for="pw">Password</label>
+    <input id="pw" type="password" placeholder="Enter password" autocomplete="current-password">
+    <button id="enterBtn">Enter</button>
+    <p id="gateMsg" class="msg" aria-live="polite"></p>
+  </section>
+
+  <header class="site-header protected">
+    <div class="container">
+      <nav>
+        <a href="#about">About</a>
+        <a href="#hobbies">Hobbies</a>
+        <a href="#guestbook">Guestbook</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#links">Links</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="about" class="card protected">
+      <h2>About</h2>
+      <p>Hey — I’m Drew. This site is <strong>under construction</strong> as I collect photos, videos, and notes for friends and family.</p>
+      <ul class="bullets">
+        <li>Theme: blue &amp; bluish-gray</li>
+        <li>Private access only</li>
+        <li>Poster is the photo above (as-is)</li>
+      </ul>
+    </section>
+
+    <section id="hobbies" class="card protected">
+      <h2>Hobbies</h2>
+      <div class="grid-2">
+        <div>
+          <h3>Yamaha Four-Wheelers</h3>
+          <p>I tinker, ride, and keep things running — especially my 2004 Yamaha Kodiak 450.</p>
+        </div>
+        <div>
+          <h3>2017 Jeep Wrangler</h3>
+          <p>Trail-minded and hands-on. I keep notes on upgrades, maintenance, and road trips.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="guestbook" class="card protected">
+      <h2>Guestbook</h2>
+      <p class="muted">Leave a note for Drew (stored only in your browser unless you export and send it to me).</p>
+      <form id="guestForm">
+        <div class="form-row">
+          <label for="gname">Name</label>
+          <input id="gname" type="text" required>
+        </div>
+        <div class="form-row">
+          <label for="gmsg">Message</label>
+          <textarea id="gmsg" rows="3" required></textarea>
+        </div>
+        <button type="submit">Sign</button>
+        <button type="button" id="exportBtn">Export (.json)</button>
+        <span id="guestMsg" class="msg" aria-live="polite"></span>
+      </form>
+
+      <ul id="guestList" class="guest-list"></ul>
+    </section>
+
+    <section id="gallery" class="card protected">
+      <h2>Gallery</h2>
+      <p>Photos and videos coming soon. (We can wire this to a /media folder when you’re ready.)</p>
+    </section>
+
+    <section id="links" class="card protected">
+      <h2>Links</h2>
+      <ul class="bullets">
+        <li><a href="https://www.facebook.com/share/1GNf5LHQzQ/?mibextid=wwXIfr" id="fbLink" rel="me noopener" target="_blank">Facebook</a></li>
+        <li><a href="https://www.tiktok.com/@drewcifer_2?_t=ZP-90nDXf5z0s2&_r=1" id="ttLink" rel="me noopener" target="_blank">TikTok</a></li>
+        <li><a href="https://youtube.com/@drewy7821?si=5qh9wYwd32DwY7Op" id="ytLink" rel="me noopener" target="_blank">YouTube</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer protected">
+    <div class="container">
+      <small>© <span id="year"></span> Drew Yon • Personal site</small>
+    </div>
+  </footer>
+
+  <script>
+    const PASSWORD_HASH_HEX = "b27a1b00dcc17ab175914ebc37cdeb1b8da68f2f132c8f9fc1cb9bf294e5a626";
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    async function sha256Hex(str) { 
+      const enc = new TextEncoder();
+      const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+    async function tryEnter() { 
+      const inp = document.getElementById('pw');
+      const msg = document.getElementById('gateMsg');
+      const got = await sha256Hex(inp.value);
+      if (got === PASSWORD_HASH_HEX) { 
+        document.body.classList.remove('locked');
+        localStorage.setItem('drewyon_authed', '1');
+        msg.textContent = 'Unlocked!';
+        setTimeout(()=> msg.textContent = '', 800);
+      } else {
+        msg.textContent = 'Incorrect password.';
+        setTimeout(()=> msg.textContent = '', 1500);
+        inp.select();
+      }
+    }
+    document.getElementById('enterBtn').addEventListener('click', tryEnter);
+    document.getElementById('pw').addEventListener('keydown', (e)=> { if (e.key === 'Enter') tryEnter(); });
+    if (localStorage.getItem('drewyon_authed') === '1') { document.body.classList.remove('locked'); }
+
+    // Guestbook
+    const storeKey = 'drew_guestbook_entries';
+    const guestListEl = document.getElementById('guestList');
+    const guestMsgEl = document.getElementById('guestMsg');
+    function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+    function loadEntries(){try{return JSON.parse(localStorage.getItem(storeKey) || '[]');}catch(e){return [];}}
+    function saveEntries(entries){localStorage.setItem(storeKey, JSON.stringify(entries));}
+    function renderEntries(){
+      const entries = loadEntries();
+      guestListEl.innerHTML = entries.map(e => (
+        '<li class="guest-item"><div><strong>'+esc(e.name)+'</strong>' +
+        '<span class="muted"> — '+ new Date(e.ts).toLocaleString() + '</span></div>' +
+        '<p>'+esc(e.msg)+'</p></li>'
+      )).join('');
+    }
+    document.getElementById('guestForm').addEventListener('submit', (ev)=>{
+      ev.preventDefault();
+      const name = document.getElementById('gname').value.trim();
+      const msg  = document.getElementById('gmsg').value.trim();
+      if (!name || !msg) return;
+      const entries = loadEntries();
+      entries.unshift({ name, msg, ts: Date.now() });
+      saveEntries(entries);
+      ev.target.reset();
+      guestMsgEl.textContent = 'Signed! (Saved in your browser)';
+      setTimeout(()=> guestMsgEl.textContent = '', 1500);
+      renderEntries();
+    });
+    document.getElementById('exportBtn').addEventListener('click', ()=>{
+      const data = JSON.stringify(loadEntries(), null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'guestbook-entries.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+    renderEntries();
+  </script>
+</body>
+</html>
